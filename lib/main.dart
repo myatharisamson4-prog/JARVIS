@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const JarvisApp());
@@ -34,6 +35,7 @@ class JarvisHome extends StatefulWidget {
 }
 
 class _JarvisHomeState extends State<JarvisHome> {
+  static const MethodChannel _appLauncher = MethodChannel('jarvis/app_launcher');
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
 
@@ -120,6 +122,15 @@ class _JarvisHomeState extends State<JarvisHome> {
     );
   }
 
+  Future<bool> _launchApp(String packageName) async {
+    try {
+      final result = await _appLauncher.invokeMethod('launchApp', {'packageName': packageName});
+      return result == true;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Future<void> _processCommand(String command) async {
     final text = command.toLowerCase().trim();
 
@@ -128,7 +139,10 @@ class _JarvisHomeState extends State<JarvisHome> {
       _isListening = false;
     });
 
-    if (text.contains('hello') ||
+    if (text.contains('open youtube') || text.contains('launch youtube')) {
+      final opened = await _launchApp('com.google.android.youtube');
+      await _speak(opened ? 'Opening YouTube.' : 'I could not open YouTube.');
+    } else if (text.contains('hello') ||
         text.contains('hi jarvis') ||
         text == 'hi') {
       await _speak('Hello Samson. JARVIS is ready.');
